@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: hostel-backend
+    ports:
+      - "8083:8083"
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=${PORT}
+      - UPLOAD_DIR=${UPLOAD_DIR}
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - hostel-network
+
+  frontend:
+    build: ./frontend
+    container_name: hostel-frontend
+    ports:
+      - "8080:80"
+    env_file:
+      - .env
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    depends_on:
+      - backend
+    networks:
+      - hostel-network
+
+networks:
+  hostel-network:
+    driver: bridge
+
+volumes:
+  uploads_data:

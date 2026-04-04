@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: chityala54/hostel-backend:v16
+          imagePullPolicy: Always   # 🔥 ADD THIS
+          ports:
+            - containerPort: 8083
+
+          # ✅ CORRECT POSITION (INSIDE container)
+          env:
+            - name: MONGO_URI
+              value: "mongodb+srv://hostelDB:hostelDB@cluster0.wgzzfuy.mongodb.net/hostelDB?retryWrites=true&w=majority"
+            - name: JWT_SECRET
+              value: "my_super_secret_key_12345678901234567890"

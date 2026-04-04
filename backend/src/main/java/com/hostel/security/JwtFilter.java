@@ -26,9 +26,15 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        // ✅🔥 FINAL FIX: Handle preflight properly
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return; // 🚨 STOP HERE (do NOT go to security)
+        }
+
         String path = request.getServletPath();
 
-        // ✅ VERY IMPORTANT → SKIP AUTH APIs
+        // ✅ Skip auth APIs
         if (path.startsWith("/api/auth")) {
             filterChain.doFilter(request, response);
             return;
@@ -36,7 +42,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // ✅ If no token → just continue
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;

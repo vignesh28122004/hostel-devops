@@ -1,95 +1,58 @@
 package com.hostel.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity; // ✅ ADD
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.*;
-
-import java.util.List;
 
 @Configuration
-@EnableWebSecurity // 🔥 VERY IMPORTANT
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
 
-    // ✅ PASSWORD ENCODER
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ SECURITY CONFIG
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                // ✅🔥 VERY IMPORTANT (THIS WAS MISSING)
+                .cors()
 
-                // 🔥 DISABLE DEFAULT BASIC AUTH
-                .httpBasic(httpBasic -> httpBasic.disable())
+                .and()
+                .csrf().disable()
 
-                // 🔥 STATELESS SESSION (JWT)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 
+                .and()
                 .authorizeHttpRequests(auth -> auth
 
-                        // ✅ PUBLIC APIs
+                        // ✅ allow preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // ✅ allow auth APIs
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // ✅ FILE ACCESS
-                        .requestMatchers("/uploads/**").permitAll()
-
-                        // ✅ STUDENT → CREATE complaint
-                        .requestMatchers(HttpMethod.POST, "/api/complaints")
-                        .hasRole("STUDENT")
-
-                        // ✅ ADMIN → VIEW ALL complaints
-                        .requestMatchers(HttpMethod.GET, "/api/complaints")
-                        .hasRole("ADMIN")
-
-                        // ✅ STUDENT → THEIR complaints
-                        .requestMatchers("/api/complaints/student/**")
-                        .hasRole("STUDENT")
-
-                        // ✅ ADMIN → UPDATE
-                        .requestMatchers(HttpMethod.PUT, "/api/complaints/**")
-                        .hasRole("ADMIN")
-
-                        // ✅ ANY OTHER
+                        // 🔒 secure others
                         .anyRequest().authenticated()
                 )
 
-                // 🔥 ADD JWT FILTER
+                // ✅ JWT filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    }
-
-    // ✅ CORS CONFIG
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-
-        config.setAllowedOrigins(List.of("http://localhost:8080"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-
-        return source;
     }
 }

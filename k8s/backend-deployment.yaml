@@ -15,7 +15,7 @@ spec:
       containers:
         - name: backend
           image: chityala54/hostel-backend:latest
-          imagePullPolicy: Always   # 🔥 ADD THIS
+          imagePullPolicy: Always  
           ports:
             - containerPort: 8083
 

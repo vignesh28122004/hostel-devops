@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // ✅ backend URL
+  baseURL: API_URL, // ✅ dynamic from env
   headers: {
     "Content-Type": "application/json",
   },
@@ -14,7 +16,6 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 
-  // ❌ DO NOT send token for auth APIs
   if (!config.url?.includes("/api/auth") && token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -38,7 +39,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refreshToken");
 
         const res = await axios.post(
-          "http://localhost:8083/api/auth/refresh", // ✅ FIXED PORT + PATH
+          `${API_URL}/api/auth/refresh`, // ✅ FIXED (NO localhost)
           { refreshToken }
         );
 
@@ -51,7 +52,6 @@ api.interceptors.response.use(
         return api(originalRequest);
 
       } catch (err) {
-        // logout if refresh fails
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("refreshToken");
@@ -88,20 +88,18 @@ export interface ComplaintData {
 }
 
 // ============================
-// AUTH APIs (🔥 FIXED PATH)
+// AUTH APIs
 // ============================
 
 export const authService = {
-
   register: (data: RegisterData) =>
-    api.post("/api/auth/register", data), // ✅ FIXED
+    api.post("/api/auth/register", data),
 
   login: (data: LoginData) =>
-    api.post("/api/auth/login", data), // ✅ FIXED
+    api.post("/api/auth/login", data),
 
   adminLogin: (data: LoginData) =>
-    api.post("/api/auth/login", data), // ✅ SAME
-
+    api.post("/api/auth/login", data),
 };
 
 // ============================
@@ -109,22 +107,20 @@ export const authService = {
 // ============================
 
 export const complaintService = {
-
   create: (data: ComplaintData) =>
-    api.post("/api/complaints", data), // ✅ FIXED
+    api.post("/api/complaints", data),
 
   getStudentComplaints: (studentId: string) =>
-    api.get(`/api/complaints/student/${studentId}`), // ✅ FIXED
+    api.get(`/api/complaints/student/${studentId}`),
 
   getAll: () =>
-    api.get("/api/complaints"), // ✅ FIXED
+    api.get("/api/complaints"),
 
   updateStatus: (id: string, status: string) =>
-    api.put(`/api/complaints/${id}?status=${status}`), // ✅ FIXED
+    api.put(`/api/complaints/${id}?status=${status}`),
 
   updateRemark: (id: string, remark: string) =>
-    api.put(`/api/complaints/${id}/remark?remark=${remark}`), // ✅ FIXED
-
+    api.put(`/api/complaints/${id}/remark?remark=${remark}`),
 };
 
 export default api;
